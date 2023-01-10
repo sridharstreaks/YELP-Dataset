@@ -1,0 +1,133 @@
+## This is the sql code that can be used for creating Tables and a sql database for the YELP Dataset.
+## This is a mini project that is part of the UC Davis and Coursera "SQL For Data Science" course.
+
+## The following tables are created using the MYSQL workbench. The for is in json which is the default filetype availabe in the YELP website.
+## Since the file can be directly loaded from the website, I downloaded the Zip file containing all the datasets the created dataset by loading from my local storage
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+## Creating a Database to store the tables.
+CREATE DATABASE yelp_db;
+USE yelp_db;
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Loading the json files one by one
+
+LOAD DATA INFILE '/path/to/yelp_academic_dataset_business.json' INTO TABLE yelp_business
+JSON '.' 
+IGNORE 1 ROWS
+SET business_id=$.business_id, name=$.name, address=$.address, city=$.city, state=$.state, postal_code=$.postal_code, latitude=$.latitude, longitude=$.longitude, stars=$.stars, review_count=$.review_count, is_open=$.is_open, attributes=$.attributes, categories=$.categories, hours=$.hours;
+
+# Creating a Table for this loaded json
+
+CREATE TABLE yelp_business (
+    business_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    city VARCHAR(255) NOT NULL,
+    state VARCHAR(255) NOT NULL,
+    postal_code VARCHAR(255) NOT NULL,
+    latitude FLOAT NOT NULL,
+    longitude FLOAT NOT NULL,
+    stars INT NOT NULL,
+    review_count INT NOT NULL,
+    is_open TINYINT(1) NOT NULL,
+    attributes JSON NOT NULL,
+    categories VARCHAR(255) NOT NULL,
+    hours JSON DEFAULT NULL,
+    PRIMARY KEY (business_id)
+);
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Loading the file checkin.json
+
+LOAD DATA INFILE '/path/to/yelp_academic_dataset_checkin.json' INTO TABLE yelp_checkin
+JSON '.'
+SET business_id=$.business_id, date=$.date;
+
+# Creating a table for checkin data
+
+CREATE TABLE yelp_checkin (
+    business_id VARCHAR(255) NOT NULL,
+    date VARCHAR(255) NOT NULL,
+    PRIMARY KEY (business_id)
+);
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Creating a table for reviews data
+
+CREATE TABLE reviews (
+    review_id VARCHAR(255) NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    business_id VARCHAR(255) NOT NULL,
+    stars INT NOT NULL,
+    useful INT NOT NULL,
+    funny INT NOT NULL,
+    cool INT NOT NULL,
+    text TEXT NOT NULL,
+    date DATETIME NOT NULL,
+    PRIMARY KEY (review_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (business_id) REFERENCES yelp_business(business_id)
+);
+
+
+# Loading the file reviews.json (this is a huge file so allocate enough memory for this)
+
+LOAD DATA INFILE '/path/to/yelp_academic_dataset_review.json' INTO TABLE reviews
+JSON '.'
+SET review_id=$.review_id, user_id=$.user_id, business_id=$.business_id, stars=$.stars, useful=$.useful, funny=$.funny, cool=$.cool, text=$.text, date=$.date;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# Creating table for Tips
+
+CREATE TABLE compliments (
+    user_id VARCHAR(255) NOT NULL,
+    business_id VARCHAR(255) NOT NULL,
+    text VARCHAR(255) NOT NULL,
+    date DATETIME NOT NULL,
+    compliment_count INT NOT NULL,
+    PRIMARY KEY (user_id, business_id, date),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (business_id) REFERENCES yelp_business(business_id)
+);
+
+#loading the file tip.json
+
+LOAD DATA INFILE '/path/to/yelp_academic_dataset_tip.json' INTO TABLE compliments
+JSON '.'
+SET user_id=$.user_id, business_id=$.business_id, text=$.text, date=$.date, compliment_count=$.compliment_count;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# Creating a table for users
+
+CREATE TABLE users (
+    user_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    review_count INT NOT NULL,
+    yelping_since DATETIME NOT NULL,
+    useful INT NOT NULL,
+    funny INT NOT NULL,
+    cool INT NOT NULL,
+    elite VARCHAR(255) DEFAULT NULL,
+    friends JSON DEFAULT NULL,
+    PRIMARY KEY (user_id)
+);
+
+
+# Loading the data from user.json
+
+LOAD DATA INFILE '/path/to/yelp_academic_dataset_user.json' INTO TABLE users
+JSON '.'
+SET user_id=$.user_id, name=$.name, review_count=$.review_count, yelping_since=$.yelping_since, useful=$.useful, funny=$.funny, cool=$.cool, elite=$.elite, friends=$.friends;
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+This will successfully load the required tables in the database created which can be used for futher analysis. 
+I created a sample analysis in kaggle do check it out : "https://www.kaggle.com/code/sridharstreaks/business-review-analysis-from-yelp-dataset/notebook"
